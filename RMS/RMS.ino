@@ -49,32 +49,39 @@ void setup() {
   Serial.println(WiFi.localIP());
 
   routesConfiguration(); // Reads routes from routesManagement
-  
+
   server.begin();
-  
+
   // RTC
   if (! rtc.begin()) {
     Serial.println("Couldn't find RTC");
     Serial.flush();
     //    abort();
   }
-  
+
   // The following line can be uncommented if the time needs to be reset.
   rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   rtc.start();
-
+  pinMode(LED_BUILTIN, OUTPUT);
 
 }
 
 void loop() {
-  
+
+  builtinLED();
 
 
-  
- delay(LOOPDELAY); // To allow time to publish new code.
+  delay(LOOPDELAY); // To allow time to publish new code.
 }
 
 
+void builtinLED() {
+  if (LEDOn) {
+    digitalWrite(LED_BUILTIN, HIGH);
+  } else {
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+}
 
 void logEvent(String dataToLog) {
   /*
