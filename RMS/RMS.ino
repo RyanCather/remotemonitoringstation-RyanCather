@@ -80,9 +80,11 @@ void setup() {
     Serial.flush();
     //    abort();
   }
+  if (! rtc.initialized() || rtc.lostPower()) {
+    Serial.println("RTC is NOT initialized, let's set the time!");
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  }
 
-  // The following line can be uncommented if the time needs to be reset.
-  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   rtc.start();
 
   // MiniTFT Start
