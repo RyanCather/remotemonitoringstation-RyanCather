@@ -1,8 +1,8 @@
 /* Welcome to the code base for the Remote Monitoring System (RMS) (c) 2022
- * 
- * This code is developed for the Adafruit Feather Huzzah32 and runs a webserver for users to access.
- * 
- * THIS IS THE WORK IN PROGRESS (WIP) Branch! NOT Production
+
+   This code is developed for the Adafruit Feather Huzzah32 and runs a webserver for users to access.
+
+   THIS IS THE WORK IN PROGRESS (WIP) Branch! NOT Production
 */
 
 #include "sensitiveInformation.h"
@@ -22,9 +22,22 @@ AsyncWebServer server(80);
 #include "RTClib.h"
 
 RTC_PCF8523 rtc;
-char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 
 // RTC End
+
+// MiniTFT Start
+#include <Adafruit_GFX.h>    // Core graphics library
+#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
+#include "Adafruit_miniTFTWing.h"
+
+Adafruit_miniTFTWing ss;
+#define TFT_RST    -1     // we use the seesaw for resetting to save a pin
+#define TFT_CS   14       // THIS IS DIFFERENT FROM THE DEFAULT CODE
+#define TFT_DC   32       // THIS IS DIFFERENT FROM THE DEFAULT CODE
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS,  TFT_DC, TFT_RST);
+
+
+// MiniTFT End
 
 boolean LEDOn = false; // State of Built-in LED true=on, false=off.
 #define LOOPDELAY 100
@@ -71,6 +84,25 @@ void setup() {
   // The following line can be uncommented if the time needs to be reset.
   rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   rtc.start();
+
+  // MiniTFT Start
+  if (!ss.begin()) {
+    Serial.println("seesaw init error!");
+    while (1);
+  }
+  else Serial.println("seesaw started");
+
+  ss.tftReset();
+  ss.setBacklight(0x0); //set the backlight fully on
+
+  // Use this initializer (uncomment) if you're using a 0.96" 180x60 TFT
+  tft.initR(INITR_MINI160x80);   // initialize a ST7735S chip, mini display
+
+  tft.setRotation(3);
+  tft.fillScreen(ST77XX_BLACK);
+
+  // MiniTFT End
+
   pinMode(LED_BUILTIN, OUTPUT);
 
 }
@@ -113,4 +145,13 @@ void logEvent(String dataToLog) {
 
   Serial.print("\nEvent Logged: ");
   Serial.println(logEntry);
+}
+
+void writeTextTFT(char *text, uint16_t color, int textSize) {
+  tft.fillScreen(ST77XX_BLACK);
+  tft.setCursor(0, 0);
+  tft.setTextSize(textSize);
+  tft.setTextColor(color);
+  tft.setTextWrap(true);
+  tft.print(text);
 }

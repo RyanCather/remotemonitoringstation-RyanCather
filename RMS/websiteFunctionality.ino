@@ -26,6 +26,7 @@ void routesConfiguration() {
     if (!request->authenticate(usernameGuest, passwordGuest))
       return request->requestAuthentication();
     logEvent("Dashboard");
+    writeTextTFT("Guest", ST77XX_GREEN, 4);
     request->send(SPIFFS, "/dashboard.html", "text/html", false, processor);
   });
 
@@ -35,6 +36,7 @@ void routesConfiguration() {
     if (!request->authenticate(usernameAdmin, passwordAdmin))
       return request->requestAuthentication();
     logEvent("Administrator Access");
+    writeTextTFT("Admin", ST77XX_RED, 4);
     request->send(SPIFFS, "/admin.html", "text/html", false, processor);
   });
 
