@@ -57,7 +57,7 @@ void setup() {
     return;
   }
 
-  Serial.println(listFiles(false));
+  
 
   // Wifi Configuration
   WiFi.begin(ssid, password);
@@ -81,7 +81,7 @@ void setup() {
     //    abort();
   }
   if (! rtc.initialized() || rtc.lostPower()) {
-    Serial.println("RTC is NOT initialized, let's set the time!");
+    logEvent("RTC is NOT initialized, let's set the time!");
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
 
@@ -89,10 +89,10 @@ void setup() {
 
   // MiniTFT Start
   if (!ss.begin()) {
-    Serial.println("seesaw init error!");
+    logEvent("seesaw init error!");
     while (1);
   }
-  else Serial.println("seesaw started");
+  else logEvent("seesaw started");
 
   ss.tftReset();
   ss.setBacklight(0x0); //set the backlight fully on
@@ -106,6 +106,7 @@ void setup() {
   // MiniTFT End
 
   pinMode(LED_BUILTIN, OUTPUT);
+  logEvent(listFiles(false));
 
 }
 
