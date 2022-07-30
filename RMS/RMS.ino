@@ -17,6 +17,15 @@
 
 AsyncWebServer server(80);
 
+// DC Motor Featherwing Start
+
+#include <Wire.h>
+#include <Adafruit_MotorShield.h>
+//#include "utility/Adafruit_PWMServoDriver.h"
+Adafruit_MotorShield AFMS = Adafruit_MotorShield();
+Adafruit_DCMotor *myMotor = AFMS.getMotor(1);
+
+// DC Motor Featherwing End
 
 // RTC Start - Remove if unnecessary
 #include "RTClib.h"
@@ -57,7 +66,6 @@ void setup() {
     return;
   }
 
-  
 
   // Wifi Configuration
   WiFi.begin(ssid, password);
@@ -87,6 +95,9 @@ void setup() {
 
   rtc.start();
 
+  // RTC End
+
+
   // MiniTFT Start
   if (!ss.begin()) {
     logEvent("seesaw init error!");
@@ -107,6 +118,18 @@ void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT);
   logEvent(listFiles(false));
+
+  // DC Motor Featherwing Start
+
+  if (!AFMS.begin()) {         // create with the default frequency 1.6KHz
+    // if (!AFMS.begin(1000)) {  // OR with a different frequency, say 1KHz
+    logEvent("Could not find Motor Shield. Check wiring.");
+    while (1);
+  }
+  logEvent("Motor Shield found.");
+  myMotor->setSpeed(100);
+
+  // DC Motor Featherwing End
 
 }
 
