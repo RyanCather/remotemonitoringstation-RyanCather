@@ -1,6 +1,8 @@
 /* Welcome to the code base for the Remote Monitoring System (RMS) (c) 2022
  * 
  * This code is developed for the Adafruit Feather Huzzah32 and runs a webserver for users to access.
+ * 
+ * THIS IS THE WORK IN PROGRESS (WIP) Branch! NOT Production
 */
 
 #include "sensitiveInformation.h"
@@ -41,6 +43,8 @@ void setup() {
     Serial.println("SPIFFS Mount Failed");
     return;
   }
+
+  Serial.println(listFiles(false));
 
   // Wifi Configuration
   WiFi.begin(ssid, password);

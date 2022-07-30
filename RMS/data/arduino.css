@@ -2,8 +2,14 @@
     display: grid;
     grid-template-columns: auto auto;
     grid-gap: 10px;
-    background-color: #40b973;
     padding: 10px;
+}
+.admin {
+    background-color: #ff0000;
+}
+
+.guest {
+    background-color: #40b973;
 }
 
 .grid-container > div {
@@ -28,11 +34,9 @@ body {
 }
 
 h1 {
-    background-color: green;
     color: white;
     text-align: center;
 }
-
 
 /* Navbar */
 ul {
