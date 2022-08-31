@@ -2,6 +2,12 @@
 
 #define FORMAT_SPIFFS_IF_FAILED true
 
+#include <Wire.h>
+#include "Adafruit_ADT7410.h"
+#include <Adafruit_GFX.h>    // Core graphics library
+#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
+#include "Adafruit_miniTFTWing.h"
+
 // Wifi & Webserver
 #include "WiFi.h"
 #include "SPIFFS.h"
@@ -15,9 +21,28 @@ AsyncWebServer server(80);
 #include "RTClib.h"
 
 RTC_PCF8523 rtc;
-char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 
 // RTC End
+
+
+// Create the ADT7410 temperature sensor object
+Adafruit_ADT7410 tempsensor = Adafruit_ADT7410();
+
+
+
+// MiniTFT Start
+#include <Adafruit_GFX.h>    // Core graphics library
+#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
+#include "Adafruit_miniTFTWing.h"
+
+Adafruit_miniTFTWing ss;
+#define TFT_RST    -1     // we use the seesaw for resetting to save a pin
+#define TFT_CS   14       // THIS IS DIFFERENT FROM THE DEFAULT CODE
+#define TFT_DC   32       // THIS IS DIFFERENT FROM THE DEFAULT CODE
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS,  TFT_DC, TFT_RST);
+
+
+// MiniTFT End
 
 boolean LEDOn = false; // State of Built-in LED true=on, false=off.
 #define LOOPDELAY 100
@@ -36,6 +61,34 @@ void setup() {
     Serial.println("SPIFFS Mount Failed");
     return;
   }
+  if (!ss.begin()) {
+    Serial.println("seesaw init error!");
+    while (1);
+  }
+  else Serial.println("seesaw started");
+
+  ss.tftReset();
+  ss.setBacklight(0x0); //set the backlight fully on
+
+  // Use this initializer (uncomment) if you're using a 0.96" 180x60 TFT
+  tft.initR(INITR_MINI160x80);   // initialize a ST7735S chip, mini display
+
+  tft.setRotation(3);
+  tft.fillScreen(ST77XX_BLACK);
+
+
+  Serial.println("ADT7410 demo");
+
+  // Make sure the sensor is found, you can also pass in a different i2c
+  // address with tempsensor.begin(0x49) for example
+  if (!tempsensor.begin()) {
+    Serial.println("Couldn't find ADT7410!");
+    while (1);
+  }
+
+  // sensor takes 250 ms to get first readings
+  delay(250);
+
 
   // Wifi Configuration
   WiFi.begin(ssid, password);
@@ -58,10 +111,32 @@ void setup() {
     Serial.flush();
     //    abort();
   }
+  if (! rtc.initialized() || rtc.lostPower()) {
+    logEvent("RTC is NOT initialized, let's set the time!");
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  }
 
-  // The following line can be uncommented if the time needs to be reset.
-  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   rtc.start();
+
+
+  // MiniTFT Start
+  if (!ss.begin()) {
+    logEvent("seesaw init error!");
+    while (1);
+  }
+  else logEvent("seesaw started");
+
+  ss.tftReset();
+  ss.setBacklight(0x0); //set the backlight fully on
+
+  // Use this initializer (uncomment) if you're using a 0.96" 180x60 TFT
+  tft.initR(INITR_MINI160x80);   // initialize a ST7735S chip, mini display
+
+  tft.setRotation(1);
+  tft.fillScreen(ST77XX_BLACK);
+
+  // MiniTFT End
+
   pinMode(LED_BUILTIN, OUTPUT);
 
 }
@@ -69,8 +144,8 @@ void setup() {
 void loop() {
 
   builtinLED();
-
-
+  updateTemperature();
+  readButtons();
   delay(LOOPDELAY); // To allow time to publish new code.
 }
 
@@ -104,4 +179,80 @@ void logEvent(String dataToLog) {
 
   Serial.print("\nEvent Logged: ");
   Serial.println(logEntry);
+}
+
+
+void tftDrawText(String text, uint16_t color) {
+  //tft.fillScreen(ST77XX_BLACK);
+  tft.setCursor(0, 0);
+  tft.setTextSize(3);
+  tft.setTextColor(ST77XX_BLACK);
+  tft.print(text);
+  tft.setTextColor(color);
+  tft.setTextWrap(true);
+  tft.print(text);
+}
+
+void updateTemperature() {
+  // Read and print out the temperature, then convert to *F
+  float c = tempsensor.readTempC();
+  float f = c * 9.0 / 5.0 + 32;
+  Serial.print("Temp: "); Serial.print(c); Serial.print("*C\t");
+  Serial.print(f); Serial.println("*F");
+  String tempInC = String(c);
+  tftDrawText(tempInC, ST77XX_WHITE);
+  delay(100);
+}
+
+void readButtons() {
+  uint16_t color;
+  uint32_t buttons = ss.readButtons();
+  color = ST77XX_BLACK;
+  if (! (buttons & TFTWING_BUTTON_LEFT)) {
+    Serial.println("LEFT");
+    color = ST77XX_WHITE;
+  }
+  tft.fillTriangle(150, 30, 150, 50, 160, 40, color);
+
+  color = ST77XX_BLACK;
+  if (! (buttons & TFTWING_BUTTON_RIGHT)) {
+    Serial.println("RIGHT");
+    color = ST77XX_WHITE;
+  }
+  tft.fillTriangle(120, 30, 120, 50, 110, 40, color);
+
+  color = ST77XX_BLACK;
+  if (! (buttons & TFTWING_BUTTON_DOWN)) {
+    Serial.println("DOWN");
+    color = ST77XX_WHITE;
+  }
+  tft.fillTriangle(125, 26, 145, 26, 135, 16, color);
+
+  color = ST77XX_BLACK;
+  if (! (buttons & TFTWING_BUTTON_UP)) {
+    Serial.println("UP");
+    color = ST77XX_WHITE;
+  }
+  tft.fillTriangle(125, 53, 145, 53, 135, 63, color);
+
+  color = ST77XX_BLACK;
+  if (! (buttons & TFTWING_BUTTON_A)) {
+    Serial.println("A");
+    color = ST7735_GREEN;
+  }
+  tft.fillCircle(30, 57, 10, color);
+
+  color = ST77XX_BLACK;
+  if (! (buttons & TFTWING_BUTTON_B)) {
+    Serial.println("B");
+    color = ST77XX_YELLOW;
+  }
+  tft.fillCircle(30, 18, 10, color);
+
+  color = ST77XX_BLACK;
+  if (! (buttons & TFTWING_BUTTON_SELECT)) {
+    Serial.println("SELECT");
+    color = ST77XX_WHITE;
+  }
+  tft.fillCircle(80, 40, 7, color);
 }
