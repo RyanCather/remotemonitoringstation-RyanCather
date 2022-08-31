@@ -23,17 +23,29 @@ void routesConfiguration() {
   // Example of a route with additional authentication (popup in browser)
   // And uses the processor function.
   server.on("/dashboard.html", HTTP_GET, [](AsyncWebServerRequest * request) {
-    if (!request->authenticate(http_username, http_password))
+    if (!request->authenticate(usernameGuest, passwordGuest))
       return request->requestAuthentication();
     logEvent("Dashboard");
+    writeTextTFT("Guest", ST77XX_GREEN, 4);
     request->send(SPIFFS, "/dashboard.html", "text/html", false, processor);
   });
+
+  // Example of a route with additional authentication (popup in browser)
+  // And uses the processor function.
+  server.on("/admin", HTTP_GET, [](AsyncWebServerRequest * request) {
+    if (!request->authenticate(usernameAdmin, passwordAdmin))
+      return request->requestAuthentication();
+    logEvent("Administrator Access");
+    writeTextTFT("Admin", ST77XX_RED, 4);
+    request->send(SPIFFS, "/admin.html", "text/html", false, processor);
+  });
+
 
 
   // Example of route with authentication, and use of processor
   // Also demonstrates how to have arduino functionality included (turn LED on)
   server.on("/LEDOn", HTTP_GET, [](AsyncWebServerRequest * request) {
-    if (!request->authenticate(http_username, http_password))
+    if ((!request->authenticate(usernameGuest, passwordGuest) && (!request->authenticate(usernameAdmin, passwordAdmin)) ))
       return request->requestAuthentication();
     LEDOn = true;
     request->send(SPIFFS, "/dashboard.html", "text/html", false, processor);
@@ -41,7 +53,7 @@ void routesConfiguration() {
 
 
   server.on("/LEDOff", HTTP_GET, [](AsyncWebServerRequest * request) {
-    if (!request->authenticate(http_username, http_password))
+    if ((!request->authenticate(usernameGuest, passwordGuest) && (!request->authenticate(usernameAdmin, passwordAdmin)) ))
       return request->requestAuthentication();
     LEDOn = false;
     request->send(SPIFFS, "/dashboard.html", "text/html", false, processor);
@@ -50,11 +62,12 @@ void routesConfiguration() {
 
   // Example of route which sets file to download - 'true' in send() command.
   server.on("/logOutput", HTTP_GET, [](AsyncWebServerRequest * request) {
-    if (!request->authenticate(http_username, http_password))
+    if (!request->authenticate(usernameAdmin, passwordAdmin))
       return request->requestAuthentication();
     logEvent("Log Event Download");
     request->send(SPIFFS, "/logEvents.csv", "text/html", true);
   });
+
 }
 
 String getDateTime() {
@@ -76,6 +89,10 @@ String processor(const String& var) {
   if (var == "DATETIME") {
     String datetime = getDateTime();
     return datetime;
+  }
+
+  if (var == "FILELIST") {
+    return listFiles(true);
   }
 
   // Default "catch" which will return nothing in case the HTML has no variable to replace.
