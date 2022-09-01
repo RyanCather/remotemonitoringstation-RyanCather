@@ -4,7 +4,12 @@
 
 #include <Wire.h>
 
-
+// ESP32Servo Start
+#include <ESP32Servo.h>
+Servo myservo;  // create servo object to control a servo
+int servoPin = 12;
+boolean blindsOpen = false;
+// ESP32Servo End
 
 // Wifi & Webserver
 #include "WiFi.h"
@@ -67,21 +72,16 @@ void setup() {
     Serial.println("SPIFFS Mount Failed");
     return;
   }
-  if (!ss.begin()) {
-    Serial.println("seesaw init error!");
-    while (1);
-  }
-  else Serial.println("seesaw started");
-
-  ss.tftReset();
-  ss.setBacklight(0x0); //set the backlight fully on
-
-  // Use this initializer (uncomment) if you're using a 0.96" 180x60 TFT
-  tft.initR(INITR_MINI160x80);   // initialize a ST7735S chip, mini display
-
-  tft.setRotation(1);
-  tft.fillScreen(ST77XX_BLACK);
-
+  
+  
+  // ESP32Servo Start
+  ESP32PWM::allocateTimer(0);
+  ESP32PWM::allocateTimer(1);
+  ESP32PWM::allocateTimer(2);
+  ESP32PWM::allocateTimer(3);
+  myservo.setPeriodHertz(50);    // standard 50 hz servo
+  myservo.attach(servoPin, 1000, 2000); // attaches the servo on pin 18 to the servo object
+  // ESP32Servo End
 
   Serial.println("ADT7410 demo");
 
@@ -154,6 +154,7 @@ void loop() {
   builtinLED();
   updateTemperature();
   automaticFan(20.0);
+  windowBlinds();
   delay(LOOPDELAY); // To allow time to publish new code.
 }
 
@@ -202,8 +203,8 @@ void updateTemperature() {
   // Read and print out the temperature, then convert to *F
   float c = tempsensor.readTempC();
   float f = c * 9.0 / 5.0 + 32;
-  Serial.print("Temp: "); Serial.print(c); Serial.print("*C\t");
-  Serial.print(f); Serial.println("*F");
+//  Serial.print("Temp: "); Serial.print(c); Serial.print("*C\t");
+//  Serial.print(f); Serial.println("*F");
   String tempInC = String(c);
   tftDrawText(tempInC, ST77XX_WHITE);
   delay(100);
@@ -214,9 +215,22 @@ void automaticFan(float temperatureThreshold) {
   myMotor->setSpeed(100); 
   if (c < temperatureThreshold) {
     myMotor->run(RELEASE);
-    Serial.println("stop");
+//    Serial.println("stop");
   } else {
     myMotor->run(FORWARD);
-    Serial.println("forward");
+//    Serial.println("forward");
+  }
+}
+
+
+void windowBlinds() {
+  uint32_t buttons = ss.readButtons();
+  if (! (buttons & TFTWING_BUTTON_A)) {
+    if (blindsOpen) {
+      myservo.write(0);
+    } else {
+      myservo.write(180);
+    }
+    blindsOpen = !blindsOpen;
   }
 }
