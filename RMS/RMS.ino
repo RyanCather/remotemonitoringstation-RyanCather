@@ -3,10 +3,8 @@
 #define FORMAT_SPIFFS_IF_FAILED true
 
 #include <Wire.h>
-#include "Adafruit_ADT7410.h"
-#include <Adafruit_GFX.h>    // Core graphics library
-#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
-#include "Adafruit_miniTFTWing.h"
+
+
 
 // Wifi & Webserver
 #include "WiFi.h"
@@ -24,11 +22,19 @@ RTC_PCF8523 rtc;
 
 // RTC End
 
+// Temperature START
 
+#include "Adafruit_ADT7410.h"
 // Create the ADT7410 temperature sensor object
 Adafruit_ADT7410 tempsensor = Adafruit_ADT7410();
 
+// Temperature END
 
+// Motor Shield START
+#include <Adafruit_MotorShield.h>
+Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
+Adafruit_DCMotor *myMotor = AFMS.getMotor(3);
+// Motor Shield END
 
 // MiniTFT Start
 #include <Adafruit_GFX.h>    // Core graphics library
@@ -73,7 +79,7 @@ void setup() {
   // Use this initializer (uncomment) if you're using a 0.96" 180x60 TFT
   tft.initR(INITR_MINI160x80);   // initialize a ST7735S chip, mini display
 
-  tft.setRotation(3);
+  tft.setRotation(1);
   tft.fillScreen(ST77XX_BLACK);
 
 
@@ -136,6 +142,8 @@ void setup() {
   tft.fillScreen(ST77XX_BLACK);
 
   // MiniTFT End
+  
+  AFMS.begin(); // Motor Shield Start
 
   pinMode(LED_BUILTIN, OUTPUT);
 
@@ -145,7 +153,7 @@ void loop() {
 
   builtinLED();
   updateTemperature();
-  readButtons();
+  automaticFan(20.0);
   delay(LOOPDELAY); // To allow time to publish new code.
 }
 
@@ -181,13 +189,10 @@ void logEvent(String dataToLog) {
   Serial.println(logEntry);
 }
 
-
 void tftDrawText(String text, uint16_t color) {
-  //tft.fillScreen(ST77XX_BLACK);
+  tft.fillScreen(ST77XX_BLACK);
   tft.setCursor(0, 0);
   tft.setTextSize(3);
-  tft.setTextColor(ST77XX_BLACK);
-  tft.print(text);
   tft.setTextColor(color);
   tft.setTextWrap(true);
   tft.print(text);
@@ -204,55 +209,14 @@ void updateTemperature() {
   delay(100);
 }
 
-void readButtons() {
-  uint16_t color;
-  uint32_t buttons = ss.readButtons();
-  color = ST77XX_BLACK;
-  if (! (buttons & TFTWING_BUTTON_LEFT)) {
-    Serial.println("LEFT");
-    color = ST77XX_WHITE;
+void automaticFan(float temperatureThreshold) {
+  float c = tempsensor.readTempC();
+  myMotor->setSpeed(100); 
+  if (c < temperatureThreshold) {
+    myMotor->run(RELEASE);
+    Serial.println("stop");
+  } else {
+    myMotor->run(FORWARD);
+    Serial.println("forward");
   }
-  tft.fillTriangle(150, 30, 150, 50, 160, 40, color);
-
-  color = ST77XX_BLACK;
-  if (! (buttons & TFTWING_BUTTON_RIGHT)) {
-    Serial.println("RIGHT");
-    color = ST77XX_WHITE;
-  }
-  tft.fillTriangle(120, 30, 120, 50, 110, 40, color);
-
-  color = ST77XX_BLACK;
-  if (! (buttons & TFTWING_BUTTON_DOWN)) {
-    Serial.println("DOWN");
-    color = ST77XX_WHITE;
-  }
-  tft.fillTriangle(125, 26, 145, 26, 135, 16, color);
-
-  color = ST77XX_BLACK;
-  if (! (buttons & TFTWING_BUTTON_UP)) {
-    Serial.println("UP");
-    color = ST77XX_WHITE;
-  }
-  tft.fillTriangle(125, 53, 145, 53, 135, 63, color);
-
-  color = ST77XX_BLACK;
-  if (! (buttons & TFTWING_BUTTON_A)) {
-    Serial.println("A");
-    color = ST7735_GREEN;
-  }
-  tft.fillCircle(30, 57, 10, color);
-
-  color = ST77XX_BLACK;
-  if (! (buttons & TFTWING_BUTTON_B)) {
-    Serial.println("B");
-    color = ST77XX_YELLOW;
-  }
-  tft.fillCircle(30, 18, 10, color);
-
-  color = ST77XX_BLACK;
-  if (! (buttons & TFTWING_BUTTON_SELECT)) {
-    Serial.println("SELECT");
-    color = ST77XX_WHITE;
-  }
-  tft.fillCircle(80, 40, 7, color);
 }
