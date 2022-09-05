@@ -1,40 +1,15 @@
-/* Welcome to the code base for the Remote Monitoring System (RMS) (c) 2022
-
-   This code is developed for the Adafruit Feather Huzzah32 and runs a webserver for users to access.
-
-   THIS IS THE WORK IN PROGRESS (WIP) Branch! NOT Production
-*/
-
 #include "sensitiveInformation.h"
 
 #define FORMAT_SPIFFS_IF_FAILED true
 
-/***************************************************
-  This is a library for the Adafruit 0.96" Mini TFT Featherwing
-  
-  Adafruit invests time and resources providing this open source code,
-  please support Adafruit and open-source hardware by purchasing
-  products from Adafruit!
-
-  Written by Limor Fried/Ladyada for Adafruit Industries.
-  MIT license, all text above must be included in any redistribution
- ****************************************************/
-/**************************************************************************/
-/*!
-  This is a demo for the Adafruit ADT7410 breakout
-  ----> http://www.adafruit.com/products/4089
-  Adafruit invests time and resources providing this open source code,
-  please support Adafruit and open-source hardware by purchasing
-  products from Adafruit!
-*/
-/**************************************************************************/
-
 #include <Wire.h>
-#include "Adafruit_ADT7410.h"
-#include <Adafruit_GFX.h>    // Core graphics library
-#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
-#include "Adafruit_miniTFTWing.h"
 
+// ESP32Servo Start
+#include <ESP32Servo.h>
+Servo myservo;  // create servo object to control a servo
+int servoPin = 12;
+boolean blindsOpen = false; 
+// ESP32Servo End
 
 // Wifi & Webserver
 #include "WiFi.h"
@@ -44,25 +19,6 @@
 
 AsyncWebServer server(80);
 
-// DC Motor Featherwing Start
-
-#include <Wire.h>
-#include <Adafruit_MotorShield.h>
-//#include "utility/Adafruit_PWMServoDriver.h"
-Adafruit_MotorShield AFMS = Adafruit_MotorShield();
-Adafruit_DCMotor *myMotor = AFMS.getMotor(1);
-
-// DC Motor Featherwing End
-
-Adafruit_miniTFTWing ss;
-#define TFT_RST    -1    // we use the seesaw for resetting to save a pin
-#define TFT_CS   14
-#define TFT_DC   32
-
-// Create the ADT7410 temperature sensor object
-Adafruit_ADT7410 tempsensor = Adafruit_ADT7410();
-
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS,  TFT_DC, TFT_RST);
 
 // RTC Start - Remove if unnecessary
 #include "RTClib.h"
@@ -70,6 +26,20 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS,  TFT_DC, TFT_RST);
 RTC_PCF8523 rtc;
 
 // RTC End
+
+// Temperature START
+
+#include "Adafruit_ADT7410.h"
+// Create the ADT7410 temperature sensor object
+Adafruit_ADT7410 tempsensor = Adafruit_ADT7410();
+
+// Temperature END
+
+// Motor Shield START
+#include <Adafruit_MotorShield.h>
+Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
+Adafruit_DCMotor *myMotor = AFMS.getMotor(3);
+// Motor Shield END
 
 // MiniTFT Start
 #include <Adafruit_GFX.h>    // Core graphics library
@@ -102,23 +72,17 @@ void setup() {
     Serial.println("SPIFFS Mount Failed");
     return;
   }
-
-  if (!ss.begin()) {
-    Serial.println("seesaw init error!");
-    while (1);
-  }
-  else Serial.println("seesaw started");
-
-  ss.tftReset();
-  ss.setBacklight(0x0); //set the backlight fully on
-
-  // Use this initializer (uncomment) if you're using a 0.96" 180x60 TFT
-  tft.initR(INITR_MINI160x80);   // initialize a ST7735S chip, mini display
-
-  tft.setRotation(3);
-  tft.fillScreen(ST77XX_BLACK);
-
   
+  
+  // ESP32Servo Start
+  ESP32PWM::allocateTimer(0);
+  ESP32PWM::allocateTimer(1);
+  ESP32PWM::allocateTimer(2);
+  ESP32PWM::allocateTimer(3);
+  myservo.setPeriodHertz(50);    // standard 50 hz servo
+  myservo.attach(servoPin, 1000, 2000); // attaches the servo on pin 18 to the servo object
+  // ESP32Servo End
+
   Serial.println("ADT7410 demo");
 
   // Make sure the sensor is found, you can also pass in a different i2c
@@ -130,6 +94,7 @@ void setup() {
 
   // sensor takes 250 ms to get first readings
   delay(250);
+
 
   // Wifi Configuration
   WiFi.begin(ssid, password);
@@ -159,8 +124,6 @@ void setup() {
 
   rtc.start();
 
-  // RTC End
-
 
   // MiniTFT Start
   if (!ss.begin()) {
@@ -175,31 +138,23 @@ void setup() {
   // Use this initializer (uncomment) if you're using a 0.96" 180x60 TFT
   tft.initR(INITR_MINI160x80);   // initialize a ST7735S chip, mini display
 
-  tft.setRotation(3);
+  tft.setRotation(1);
   tft.fillScreen(ST77XX_BLACK);
 
   // MiniTFT End
+  
+  AFMS.begin(); // Motor Shield Start
 
   pinMode(LED_BUILTIN, OUTPUT);
-  logEvent(listFiles(false));
-
-  // DC Motor Featherwing Start
-
-  if (!AFMS.begin()) {         // create with the default frequency 1.6KHz
-    // if (!AFMS.begin(1000)) {  // OR with a different frequency, say 1KHz
-    logEvent("Could not find Motor Shield. Check wiring.");
-    while (1);
-  }
-  logEvent("Motor Shield found.");
-  myMotor->setSpeed(100);
-
-  // DC Motor Featherwing End
 
 }
 
 void loop() {
+
   builtinLED();
   updateTemperature();
+  automaticFan(20.0);
+  windowBlinds();
   delay(LOOPDELAY); // To allow time to publish new code.
 }
 
@@ -235,7 +190,6 @@ void logEvent(String dataToLog) {
   Serial.println(logEntry);
 }
 
-
 void tftDrawText(String text, uint16_t color) {
   tft.fillScreen(ST77XX_BLACK);
   tft.setCursor(0, 0);
@@ -249,9 +203,34 @@ void updateTemperature() {
   // Read and print out the temperature, then convert to *F
   float c = tempsensor.readTempC();
   float f = c * 9.0 / 5.0 + 32;
-  Serial.print("Temp: "); Serial.print(c); Serial.print("*C\t");
-  Serial.print(f); Serial.println("*F");
+//  Serial.print("Temp: "); Serial.print(c); Serial.print("*C\t");
+//  Serial.print(f); Serial.println("*F");
   String tempInC = String(c);
   tftDrawText(tempInC, ST77XX_WHITE);
   delay(100);
+}
+
+void automaticFan(float temperatureThreshold) {
+  float c = tempsensor.readTempC();
+  myMotor->setSpeed(100); 
+  if (c < temperatureThreshold) {
+    myMotor->run(RELEASE);
+//    Serial.println("stop");
+  } else {
+    myMotor->run(FORWARD);
+//    Serial.println("forward");
+  }
+}
+
+
+void windowBlinds() {
+  uint32_t buttons = ss.readButtons();
+  if (! (buttons & TFTWING_BUTTON_A)) {
+    if (blindsOpen) {
+      myservo.write(0);
+    } else {
+      myservo.write(180);
+    }
+    blindsOpen = !blindsOpen;
+  }
 }
