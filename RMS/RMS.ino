@@ -8,7 +8,7 @@
 #include <ESP32Servo.h>
 Servo myservo;  // create servo object to control a servo
 int servoPin = 12;
-boolean blindsOpen = false;
+boolean blindsOpen = false; 
 // ESP32Servo End
 
 // Wifi & Webserver
