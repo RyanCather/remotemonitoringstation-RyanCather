@@ -138,7 +138,7 @@ void setup() {
   // Use this initializer (uncomment) if you're using a 0.96" 180x60 TFT
   tft.initR(INITR_MINI160x80);   // initialize a ST7735S chip, mini display
 
-  tft.setRotation(1);
+  tft.setRotation(3);
   tft.fillScreen(ST77XX_BLACK);
 
   // MiniTFT End
