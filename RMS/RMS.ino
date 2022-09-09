@@ -1,6 +1,8 @@
 #include "sensitiveInformation.h"
 
 #define FORMAT_SPIFFS_IF_FAILED true
+#define LEDRed 27
+#define LEDGreen 33
 
 #include <Wire.h>
 
@@ -8,7 +10,7 @@
 #include <ESP32Servo.h>
 Servo myservo;  // create servo object to control a servo
 int servoPin = 12;
-boolean blindsOpen = false; 
+boolean blindsOpen = false;
 // ESP32Servo End
 
 // Wifi & Webserver
@@ -18,6 +20,19 @@ boolean blindsOpen = false;
 #include <ESPAsyncWebServer.h>
 
 AsyncWebServer server(80);
+
+// RFID Start
+
+#include <SPI.h>
+#include <MFRC522.h>
+
+#define SS_PIN  21  // ES32 Feather
+#define RST_PIN 17 // esp32 Feather - SCL pin. Could be others.
+
+MFRC522 rfid(SS_PIN, RST_PIN);
+bool safeLocked = true;
+
+// RFID End
 
 
 // RTC Start - Remove if unnecessary
@@ -37,7 +52,7 @@ Adafruit_ADT7410 tempsensor = Adafruit_ADT7410();
 
 // Motor Shield START
 #include <Adafruit_MotorShield.h>
-Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
+Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *myMotor = AFMS.getMotor(3);
 // Motor Shield END
 
@@ -72,8 +87,8 @@ void setup() {
     Serial.println("SPIFFS Mount Failed");
     return;
   }
-  
-  
+
+
   // ESP32Servo Start
   ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
@@ -142,10 +157,21 @@ void setup() {
   tft.fillScreen(ST77XX_BLACK);
 
   // MiniTFT End
-  
+
   AFMS.begin(); // Motor Shield Start
 
+  // RFID Start
+  SPI.begin(); // init SPI bus
+  rfid.PCD_Init(); // init MFRC522
+  // RFID End
+
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(LEDRed, OUTPUT);
+  pinMode(LEDGreen, OUTPUT);
+  digitalWrite(LEDRed, LOW);
+  digitalWrite(LEDGreen, LOW);
+  digitalWrite(LED_BUILTIN, LOW);
+
 
 }
 
@@ -155,6 +181,8 @@ void loop() {
   updateTemperature();
   automaticFan(20.0);
   windowBlinds();
+  safeStatusDisplay();
+  readRFID();
   delay(LOOPDELAY); // To allow time to publish new code.
 }
 
@@ -203,8 +231,8 @@ void updateTemperature() {
   // Read and print out the temperature, then convert to *F
   float c = tempsensor.readTempC();
   float f = c * 9.0 / 5.0 + 32;
-//  Serial.print("Temp: "); Serial.print(c); Serial.print("*C\t");
-//  Serial.print(f); Serial.println("*F");
+  //  Serial.print("Temp: "); Serial.print(c); Serial.print("*C\t");
+  //  Serial.print(f); Serial.println("*F");
   String tempInC = String(c);
   tftDrawText(tempInC, ST77XX_WHITE);
   delay(100);
@@ -212,13 +240,13 @@ void updateTemperature() {
 
 void automaticFan(float temperatureThreshold) {
   float c = tempsensor.readTempC();
-  myMotor->setSpeed(100); 
+  myMotor->setSpeed(100);
   if (c < temperatureThreshold) {
     myMotor->run(RELEASE);
-//    Serial.println("stop");
+    //    Serial.println("stop");
   } else {
     myMotor->run(FORWARD);
-//    Serial.println("forward");
+    //    Serial.println("forward");
   }
 }
 
@@ -233,4 +261,52 @@ void windowBlinds() {
     }
     blindsOpen = !blindsOpen;
   }
+}
+
+void safeStatusDisplay() {
+  /*
+     Outputs the status of the Safe Lock to the LEDS
+     Red LED = Locked
+     Green LED = Unlocked.
+  */
+  if (safeLocked) {
+    digitalWrite(LEDRed, HIGH);
+    digitalWrite(LEDGreen, LOW);
+  } else {
+    digitalWrite(LEDRed, LOW);
+    digitalWrite(LEDGreen, HIGH);
+  }
+}
+
+void readRFID() {
+
+  String uidOfCardRead = "";
+
+  if (rfid.PICC_IsNewCardPresent()) { // new tag is available
+    if (rfid.PICC_ReadCardSerial()) { // NUID has been readed
+      MFRC522::PICC_Type piccType = rfid.PICC_GetType(rfid.uid.sak);
+      Serial.print("RFID/NFC Tag Type: ");
+      Serial.println(rfid.PICC_GetTypeName(piccType));
+
+      // print UID in Serial Monitor in the hex format
+      Serial.print("UID:");
+      for (int i = 0; i < rfid.uid.size; i++) {
+        uidOfCardRead += rfid.uid.uidByte[i] < 0x10 ? " 0" : " ";
+        uidOfCardRead += rfid.uid.uidByte[i];
+      }
+      Serial.println(uidOfCardRead);
+
+      rfid.PICC_HaltA(); // halt PICC
+      rfid.PCD_StopCrypto1(); // stop encryption on PCD
+      uidOfCardRead.trim();
+      if (uidOfCardRead == "00 232 81 25") {
+        safeLocked = false;
+        //logEvent("Safe Unlocked");
+      } else {
+        safeLocked = true;
+        //logEvent("Safe Locked");
+      }
+    }
+  }
+
 }
