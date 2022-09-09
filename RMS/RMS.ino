@@ -281,6 +281,7 @@ void safeStatusDisplay() {
 void readRFID() {
 
   String uidOfCardRead = "";
+  String validCardUID = "00 232 81 25";
 
   if (rfid.PICC_IsNewCardPresent()) { // new tag is available
     if (rfid.PICC_ReadCardSerial()) { // NUID has been readed
@@ -299,12 +300,12 @@ void readRFID() {
       rfid.PICC_HaltA(); // halt PICC
       rfid.PCD_StopCrypto1(); // stop encryption on PCD
       uidOfCardRead.trim();
-      if (uidOfCardRead == "00 232 81 25") {
+      if (uidOfCardRead == validCardUID) {
         safeLocked = false;
-        //logEvent("Safe Unlocked");
+        logEvent("Safe Unlocked");
       } else {
         safeLocked = true;
-        //logEvent("Safe Locked");
+        logEvent("Safe Locked");
       }
     }
   }
