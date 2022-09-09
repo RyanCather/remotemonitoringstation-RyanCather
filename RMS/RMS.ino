@@ -268,6 +268,8 @@ void safeStatusDisplay() {
      Outputs the status of the Safe Lock to the LEDS
      Red LED = Locked
      Green LED = Unlocked.
+
+     @
   */
   if (safeLocked) {
     digitalWrite(LEDRed, HIGH);
@@ -286,11 +288,7 @@ void readRFID() {
   if (rfid.PICC_IsNewCardPresent()) { // new tag is available
     if (rfid.PICC_ReadCardSerial()) { // NUID has been readed
       MFRC522::PICC_Type piccType = rfid.PICC_GetType(rfid.uid.sak);
-      Serial.print("RFID/NFC Tag Type: ");
-      Serial.println(rfid.PICC_GetTypeName(piccType));
 
-      // print UID in Serial Monitor in the hex format
-      Serial.print("UID:");
       for (int i = 0; i < rfid.uid.size; i++) {
         uidOfCardRead += rfid.uid.uidByte[i] < 0x10 ? " 0" : " ";
         uidOfCardRead += rfid.uid.uidByte[i];
