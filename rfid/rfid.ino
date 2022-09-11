@@ -1,3 +1,4 @@
+
 /*
  * This ESP32 code is created by esp32io.com
  *
@@ -25,6 +26,7 @@ void setup() {
 }
 
 void loop() {
+  uidOfCardRead="";
   if (rfid.PICC_IsNewCardPresent()) { // new tag is available
     if (rfid.PICC_ReadCardSerial()) { // NUID has been readed
       MFRC522::PICC_Type piccType = rfid.PICC_GetType(rfid.uid.sak);

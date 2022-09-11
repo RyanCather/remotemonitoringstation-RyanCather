@@ -98,8 +98,6 @@ void setup() {
   myservo.attach(servoPin, 1000, 2000); // attaches the servo on pin 18 to the servo object
   // ESP32Servo End
 
-  Serial.println("ADT7410 demo");
-
   // Make sure the sensor is found, you can also pass in a different i2c
   // address with tempsensor.begin(0x49) for example
   if (!tempsensor.begin()) {
