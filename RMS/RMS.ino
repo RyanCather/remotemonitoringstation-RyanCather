@@ -115,7 +115,7 @@ void setup() {
     delay(1000);
     Serial.println("Connecting to WiFi..");
   }
-  Serial.println();
+  //Serial.println();
   Serial.print("Connected to the Internet");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
@@ -232,6 +232,7 @@ void updateTemperature() {
   //  Serial.print("Temp: "); Serial.print(c); Serial.print("*C\t");
   //  Serial.print(f); Serial.println("*F");
   String tempInC = String(c);
+  tempInC += " C"; // Degree Symbol
   tftDrawText(tempInC, ST77XX_WHITE);
   delay(100);
 }
@@ -281,7 +282,7 @@ void safeStatusDisplay() {
 void readRFID() {
 
   String uidOfCardRead = "";
-  String validCardUID = "00 232 81 25";
+  String validCardUID = "198 128 61 43";
 
   if (rfid.PICC_IsNewCardPresent()) { // new tag is available
     if (rfid.PICC_ReadCardSerial()) { // NUID has been readed
@@ -291,7 +292,7 @@ void readRFID() {
         uidOfCardRead += rfid.uid.uidByte[i] < 0x10 ? " 0" : " ";
         uidOfCardRead += rfid.uid.uidByte[i];
       }
-      Serial.println(uidOfCardRead);
+      //Serial.println(uidOfCardRead);
 
       rfid.PICC_HaltA(); // halt PICC
       rfid.PCD_StopCrypto1(); // stop encryption on PCD
