@@ -88,6 +88,13 @@ String processor(const String& var) {
     return datetime;
   }
 
+  if (var == "TEMPERATURE") {
+    float currentTemp = tempsensor.readTempC();
+    int currentTempWholeNumber = currentTemp;
+    String currentTempString = String(currentTempWholeNumber) + "°C.";
+    return String(currentTempString);
+  }
+
   // Default "catch" which will return nothing in case the HTML has no variable to replace.
   return String();
 }
