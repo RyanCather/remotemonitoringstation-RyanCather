@@ -8,30 +8,40 @@
 </head>
 
 <body>
-<nav>
-    <ul>
-        <li><a href="index.html">Home</a></li>
-        <li class="active"><a href="/dashboard.html">Dashboard</a></li>
-        <li><a href="/admin">Admin</a></li>
-    </ul>
-</nav>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li class="active"><a href="/dashboard.html">Dashboard</a></li>
+            <li><a href="/admin">Admin</a></li>
+        </ul>
+    </nav>
 
-<h1 class="guest">Guest Dashboard</h1>
+    <h1 class="guest">Guest Dashboard</h1>
 
-<div class="grid-container guest">
-    <div class="banner guest">Title</div>
-    <div><p>Date and Time </p>
-        <p>%DATETIME% *</p></div>
-    <div><p>Current Temperature</p><p>%TEMPERATURE%</p></div>
-    <div>LogEvents<p><a href="/logOutput">Download</a></div>
-    <div>
-        <p><a href="/LEDOn">Turn LED On</a></p>
-        <p><a href="/LEDOff">Turn LED Off</a></p>
+    <div class="grid-container guest">
+        <div class="banner guest">Title</div>
+        <div>
+            <p>Date and Time </p>
+            <p>%DATETIME% *</p>
+        </div>
+        <div>
+            <p>Current Temperature</p>
+            <p>%TEMPERATURE%</p>
+        </div>
+        <div>
+            <p>%SAFESTATUS%</p>
+            <p><a href="/SafeLock">Lock Safe</a></p>
+            <p><a href="/SafeUnlock">Unlock Safe</a></p>
+        </div>
+        <div></div>
+        <div>LogEvents<p><a href="/logOutput">Download</a></div>
+        <div>
+            <p><a href="/LEDOn">Turn LED On</a></p>
+            <p><a href="/LEDOff">Turn LED Off</a></p>
+        </div>
     </div>
 
-</div>
-
-<sup class="tinyText">* Example of HTML/Arduino Variable</sup>
+    <sup class="tinyText">* Example of HTML/Arduino Variable</sup>
 
 
 </body>

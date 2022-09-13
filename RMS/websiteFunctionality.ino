@@ -64,7 +64,21 @@ void routesConfiguration() {
     request->send(SPIFFS, "/404.html");
   });
 
-  
+  server.on("/SafeLock",  HTTP_GET, [](AsyncWebServerRequest * request) {
+    if (!request->authenticate(http_username, http_password))
+      return request->requestAuthentication();
+    safeLocked = true;
+    logEvent("Safe Locked via Website");
+    request->send(SPIFFS, "/dashboard.html", "text/html", false, processor);
+  });
+
+  server.on("/SafeUnlock",  HTTP_GET, [](AsyncWebServerRequest * request) {
+    if (!request->authenticate(http_username, http_password))
+      return request->requestAuthentication();
+    safeLocked = false;
+    logEvent("Safe Unlocked via Website");
+    request->send(SPIFFS, "/dashboard.html", "text/html", false, processor);
+  });
 }
 
 String getDateTime() {
@@ -93,6 +107,13 @@ String processor(const String& var) {
     int currentTempWholeNumber = currentTemp;
     String currentTempString = String(currentTempWholeNumber) + "°C.";
     return String(currentTempString);
+  }
+  if (var == "SAFESTATUS") {
+    if (safeLocked) {
+      return "Safe LOCKED";
+    } else {
+      return "Safe UNLOCKED";
+    }
   }
 
   // Default "catch" which will return nothing in case the HTML has no variable to replace.
