@@ -108,22 +108,6 @@ void setup() {
   // sensor takes 250 ms to get first readings
   delay(250);
 
-
-  // Wifi Configuration
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting to WiFi..");
-  }
-  //Serial.println();
-  Serial.print("Connected to the Internet");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-
-  routesConfiguration(); // Reads routes from routesManagement
-
-  server.begin();
-
   // RTC
   if (! rtc.begin()) {
     Serial.println("Couldn't find RTC");
@@ -162,6 +146,20 @@ void setup() {
   SPI.begin(); // init SPI bus
   rfid.PCD_Init(); // init MFRC522
   // RFID End
+
+  // Wifi Configuration
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    tftDrawText("Connecting to WiFi..", ST77XX_RED);
+  }
+  //Serial.println();
+  Serial.print("Connected to the Internet");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  routesConfiguration(); // Reads routes from routesManagement
+  server.begin();
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(LEDRed, OUTPUT);
