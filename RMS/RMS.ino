@@ -153,10 +153,19 @@ void setup() {
     delay(1000);
     tftDrawText("Connecting to WiFi..", ST77XX_RED);
   }
+  tft.fillScreen(ST77XX_BLACK);
   //Serial.println();
   Serial.print("Connected to the Internet");
   Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+  String ip = WiFi.localIP().toString();
+  Serial.println(ip);
+
+  // Display IP on TFT
+  tft.setCursor(0, 60);
+  tft.setTextSize(2);
+  tft.setTextColor(ST77XX_RED, ST77XX_BLACK);
+  tft.setTextWrap(true);
+  tft.print(ip);
 
   routesConfiguration(); // Reads routes from routesManagement
   server.begin();
@@ -181,7 +190,6 @@ void loop() {
   readRFID();
   delay(LOOPDELAY); // To allow time to publish new code.
 }
-
 
 void builtinLED() {
   if (LEDOn) {
@@ -215,10 +223,11 @@ void logEvent(String dataToLog) {
 }
 
 void tftDrawText(String text, uint16_t color) {
-  tft.fillScreen(ST77XX_BLACK);
+//  tft.fillScreen(ST77XX_BLACK);
   tft.setCursor(0, 0);
   tft.setTextSize(3);
-  tft.setTextColor(color);
+  tft.setTextColor(color, ST77XX_BLACK);
+//  tft.setTextColor(color);
   tft.setTextWrap(true);
   tft.print(text);
 }
@@ -246,7 +255,6 @@ void automaticFan(float temperatureThreshold) {
     //    Serial.println("forward");
   }
 }
-
 
 void windowBlinds() {
   uint32_t buttons = ss.readButtons();
