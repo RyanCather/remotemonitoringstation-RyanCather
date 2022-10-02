@@ -54,6 +54,9 @@ Adafruit_ADT7410 tempsensor = Adafruit_ADT7410();
 #include <Adafruit_MotorShield.h>
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *myMotor = AFMS.getMotor(3);
+
+bool fanEnabled = false;            // If the fan is on or off.
+bool automaticFanControl = true;    // Automatic or manual control
 // Motor Shield END
 
 // MiniTFT Start
@@ -163,7 +166,7 @@ void setup() {
   // Display IP on TFT
   tft.setCursor(0, 60);
   tft.setTextSize(2);
-  tft.setTextColor(ST77XX_RED, ST77XX_BLACK);
+  tft.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
   tft.setTextWrap(true);
   tft.print(ip);
 
@@ -184,7 +187,7 @@ void loop() {
 
   builtinLED();
   updateTemperature();
-  automaticFan(20.0);
+  fanControl();
   windowBlinds();
   safeStatusDisplay();
   readRFID();
@@ -223,11 +226,11 @@ void logEvent(String dataToLog) {
 }
 
 void tftDrawText(String text, uint16_t color) {
-//  tft.fillScreen(ST77XX_BLACK);
+  //  tft.fillScreen(ST77XX_BLACK);
   tft.setCursor(0, 0);
   tft.setTextSize(3);
   tft.setTextColor(color, ST77XX_BLACK);
-//  tft.setTextColor(color);
+  //  tft.setTextColor(color);
   tft.setTextWrap(true);
   tft.print(text);
 }
@@ -244,17 +247,27 @@ void updateTemperature() {
   delay(100);
 }
 
+void fanControl() {
+  if (automaticFanControl) {
+    automaticFan(25.0);
+  }
+  if (fanEnabled) {
+    myMotor->run(FORWARD);
+  } else {
+    myMotor->run(RELEASE);
+  }
+}
+
 void automaticFan(float temperatureThreshold) {
   float c = tempsensor.readTempC();
   myMotor->setSpeed(100);
   if (c < temperatureThreshold) {
-    myMotor->run(RELEASE);
-    //    Serial.println("stop");
+    fanEnabled = false;
   } else {
-    myMotor->run(FORWARD);
-    //    Serial.println("forward");
+    fanEnabled = true;
   }
 }
+
 
 void windowBlinds() {
   uint32_t buttons = ss.readButtons();
@@ -288,7 +301,8 @@ void safeStatusDisplay() {
 void readRFID() {
 
   String uidOfCardRead = "";
-  String validCardUID = "198 128 61 43";
+  String validCardUIDWork = "198 128 61 43";
+  String validCardUIDHome = "00 232 81 25";
 
   if (rfid.PICC_IsNewCardPresent()) { // new tag is available
     if (rfid.PICC_ReadCardSerial()) { // NUID has been readed
@@ -303,7 +317,7 @@ void readRFID() {
       rfid.PICC_HaltA(); // halt PICC
       rfid.PCD_StopCrypto1(); // stop encryption on PCD
       uidOfCardRead.trim();
-      if (uidOfCardRead == validCardUID) {
+      if (uidOfCardRead == validCardUIDWork || uidOfCardRead == validCardUIDHome) {
         safeLocked = false;
         logEvent("Safe Unlocked");
       } else {
