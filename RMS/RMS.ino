@@ -225,11 +225,18 @@ void logEvent(String dataToLog) {
 }
 
 void tftDrawText(String text, uint16_t color) {
-  //  tft.fillScreen(ST77XX_BLACK);
   tft.setCursor(0, 0);
   tft.setTextSize(3);
   tft.setTextColor(color, ST77XX_BLACK);
-  //  tft.setTextColor(color);
+  tft.setTextWrap(true);
+  tft.print(text);
+}
+
+void tftDrawText(String text) {
+  tft.fillScreen(ST77XX_BLACK);
+  tft.setCursor(0, 0);
+  tft.setTextSize(3);
+  tft.setTextColor(ST77XX_WHITE);
   tft.setTextWrap(true);
   tft.print(text);
 }
