@@ -184,7 +184,6 @@ void setup() {
 }
 
 void loop() {
-
   builtinLED();
   updateTemperature();
   fanControl();
@@ -267,7 +266,6 @@ void automaticFan(float temperatureThreshold) {
     fanEnabled = true;
   }
 }
-
 
 void windowBlinds() {
   uint32_t buttons = ss.readButtons();

@@ -23,7 +23,6 @@ void routesConfiguration() {
     request->send(SPIFFS, "/arduino.css", "text/css");
   });
 
-
   // Example of a route with additional authentication (popup in browser)
   // And uses the processor function.
   server.on("/dashboard.html", HTTP_GET, [](AsyncWebServerRequest * request) {
@@ -32,7 +31,6 @@ void routesConfiguration() {
     logEvent("Dashboard");
     request->send(SPIFFS, "/dashboard.html", "text/html", false, processor);
   });
-
 
   // Example of route with authentication, and use of processor
   // Also demonstrates how to have arduino functionality included (turn LED on)
@@ -43,14 +41,12 @@ void routesConfiguration() {
     request->send(SPIFFS, "/dashboard.html", "text/html", false, processor);
   });
 
-
   server.on("/LEDOff", HTTP_GET, [](AsyncWebServerRequest * request) {
     if (!request->authenticate(http_username, http_password))
       return request->requestAuthentication();
     LEDOn = false;
     request->send(SPIFFS, "/dashboard.html", "text/html", false, processor);
   });
-
 
   // Example of route which sets file to download - 'true' in send() command.
   server.on("/logOutput", HTTP_GET, [](AsyncWebServerRequest * request) {
@@ -88,7 +84,6 @@ void routesConfiguration() {
     request->send(SPIFFS, "/dashboard.html", "text/html", false, processor);
   });
 
-
   server.on("/FanManualOff",  HTTP_GET, [](AsyncWebServerRequest * request) {
     if (!request->authenticate(http_username, http_password))
       return request->requestAuthentication();
@@ -96,13 +91,17 @@ void routesConfiguration() {
     logEvent("Fan Manual Control: Off");
     request->send(SPIFFS, "/dashboard.html", "text/html", false, processor);
   });
-
   
   server.on("/FanControl",  HTTP_GET, [](AsyncWebServerRequest * request) {
     if (!request->authenticate(http_username, http_password))
       return request->requestAuthentication();
     automaticFanControl = !automaticFanControl;
-    logEvent("Fan Manual Control: On");
+    if (automaticFanControl) {
+      logEvent("Fan Control Mode: Automatic");
+    } else {
+      logEvent("Fan Control Mode: Manual");
+    }
+    
     request->send(SPIFFS, "/dashboard.html", "text/html", false, processor);
   });
   
