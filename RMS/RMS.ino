@@ -31,6 +31,8 @@ AsyncWebServer server(80);
 
 MFRC522 rfid(SS_PIN, RST_PIN);
 bool safeLocked = true;
+unsigned long previousMillis = 0;        // will store last time lock was unlocked
+const long interval = 10000;           // interval at which to blink (milliseconds)
 
 // RFID End
 
@@ -300,6 +302,14 @@ void safeStatusDisplay() {
   } else {
     digitalWrite(LEDRed, LOW);
     digitalWrite(LEDGreen, HIGH);
+
+    // safe lock timeout. Automatically relock safe after timeout.
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillis >= interval) {
+      // save the last time you blinked the LED
+      previousMillis = currentMillis;
+      safeLocked = true;
+    }
   }
 }
 
