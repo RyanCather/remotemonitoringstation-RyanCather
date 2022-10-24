@@ -1,7 +1,17 @@
 void routesConfiguration() {
 
   server.onNotFound([](AsyncWebServerRequest * request) {
-    request->send(SPIFFS, "/404.html");
+
+    if (request->url().endsWith(F(".jpg"))) {
+      // here comes some mambo-jambo to extract the filename from request->url()
+      int fnsstart = request->url().lastIndexOf('/');
+      String fn = request->url().substring(fnsstart);
+      // ... and finally
+      request->send(SPIFFS, fn, "image/jpeg", true);
+    } else {
+      request->send(SPIFFS, "/404.html");
+    }
+
   });
 
   // Example of a 'standard' route
@@ -91,7 +101,7 @@ void routesConfiguration() {
     logEvent("Fan Manual Control: Off");
     request->send(SPIFFS, "/dashboard.html", "text/html", false, processor);
   });
-  
+
   server.on("/FanControl",  HTTP_GET, [](AsyncWebServerRequest * request) {
     if (!request->authenticate(http_username, http_password))
       return request->requestAuthentication();
@@ -101,10 +111,10 @@ void routesConfiguration() {
     } else {
       logEvent("Fan Control Mode: Manual");
     }
-    
+
     request->send(SPIFFS, "/dashboard.html", "text/html", false, processor);
   });
-  
+
 }
 
 String getDateTime() {
