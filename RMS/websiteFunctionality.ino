@@ -1,3 +1,5 @@
+const char* PARAM_INPUT_1 = "tempThreshold";
+
 void routesConfiguration() {
 
   server.onNotFound([](AsyncWebServerRequest * request) {
@@ -85,16 +87,18 @@ void routesConfiguration() {
   });
 
   server.on("/SafeLockAdmin",  HTTP_GET, [](AsyncWebServerRequest * request) {
-       if (!request->authenticate(usernameAdmin, passwordAdmin)) {
+    if (!request->authenticate(usernameAdmin, passwordAdmin)) {
       return request->requestAuthentication();
+    }
     safeLocked = true;
     logEvent("Safe Locked via Website - Administrator");
     request->send(SPIFFS, "/admin.html", "text/html", false, processor);
   });
 
   server.on("/SafeUnlockAdmin",  HTTP_GET, [](AsyncWebServerRequest * request) {
-       if (!request->authenticate(usernameAdmin, passwordAdmin)) {
+    if (!request->authenticate(usernameAdmin, passwordAdmin)) {
       return request->requestAuthentication();
+    }
     safeLocked = false;
     logEvent("Safe Unlocked via Website - Administrator");
     request->send(SPIFFS, "/admin.html", "text/html", false, processor);
@@ -138,6 +142,15 @@ void routesConfiguration() {
     request->send(SPIFFS, "/admin.html", "text/html", false, processor);
   });
 
+  server.on("/setTemperatureThreshold", HTTP_GET,  [](AsyncWebServerRequest * request) {
+    int newThreshold; 
+    if (request->hasParam(PARAM_INPUT_1)) {
+      fanTemperatureThreshold = request->getParam(PARAM_INPUT_1)->value().toFloat();
+      String logMessage = "Administrator set Automatic Fan Theshold to" + String(fanTemperatureThreshold);
+      logEvent(logMessage);
+    }
+    request->send(SPIFFS, "/admin.html", "text/html", false, processor);
+  });
 }
 
 String getDateTime() {
@@ -147,7 +160,7 @@ String getDateTime() {
   return csvReadableDate;
 }
 
-String processor(const String& var) {
+String processor(const String & var) {
   /*
      Updates the HTML by replacing set variables with return value from here.
      For example:
@@ -181,6 +194,10 @@ String processor(const String& var) {
     } else {
       return "Manual";
     }
+  }
+
+  if (var == "CURRENTTHRESHOLD") {
+    return String(fanTemperatureThreshold);
   }
 
   // Default "catch" which will return nothing in case the HTML has no variable to replace.

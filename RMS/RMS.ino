@@ -49,6 +49,7 @@ RTC_PCF8523 rtc;
 #include "Adafruit_ADT7410.h"
 // Create the ADT7410 temperature sensor object
 Adafruit_ADT7410 tempsensor = Adafruit_ADT7410();
+float fanTemperatureThreshold = 25.0;
 
 // Temperature END
 
@@ -257,7 +258,7 @@ void updateTemperature() {
 
 void fanControl() {
   if (automaticFanControl) {
-    automaticFan(25.0);
+    automaticFan(fanTemperatureThreshold);
   }
   if (fanEnabled) {
     myMotor->run(FORWARD);
